@@ -139,6 +139,16 @@ export default function UrlAnalyzer() {
               </div>
             )}
 
+            {/* Screenshot preview */}
+            {result.screenshot && (
+              <div className="glass-card p-6">
+                <h3 className="text-white font-semibold mb-3">📸 Live Screenshot</h3>
+                <div className="rounded-xl overflow-hidden border border-white/10">
+                  <img src={result.screenshot} alt="Website Screenshot preview" className="w-full object-cover" />
+                </div>
+              </div>
+            )}
+
             {/* AI Explanation */}
             <div className="glass-card p-6">
               <h3 className="text-white font-semibold mb-3">🤖 AI Explanation</h3>

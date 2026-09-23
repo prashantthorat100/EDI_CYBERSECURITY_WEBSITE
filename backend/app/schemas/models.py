@@ -114,6 +114,7 @@ class PageFeatures(BaseModel):
 
 class VisionResult(BaseModel):
     """Result from vision analysis module."""
+    model_config = {"protected_namespaces": ()}
     analyzed: bool
     model_available: bool
     detections: list[Dict[str, Any]] = Field(default_factory=list)
@@ -149,6 +150,7 @@ class RiskResult(BaseModel):
 
 class AnalysisResponse(BaseModel):
     """Top-level response returned to the browser extension."""
+    model_config = {"protected_namespaces": ()}
     success: bool
     analysis_id: str
     url: str

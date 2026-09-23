@@ -91,6 +91,25 @@ const generateReport = async (req, res) => {
     doc.fontSize(12).fillColor('#00ff88').text(scan.recommendation || 'No recommendation available.');
     doc.moveDown(2);
 
+    // ── Screenshot ────────────────────────────────────
+    if (scan.screenshot) {
+      doc.addPage();
+      doc.fontSize(16).fillColor('#ffffff').text('Live Screenshot', { underline: true });
+      doc.moveDown(0.5);
+      try {
+        const base64Data = scan.screenshot.replace(/^data:image\/\w+;base64,/, '');
+        const imageBuffer = Buffer.from(base64Data, 'base64');
+        doc.image(imageBuffer, {
+          fit: [495, 600],
+          align: 'center',
+          valign: 'center'
+        });
+      } catch (err) {
+        doc.fontSize(10).fillColor('#ff3366').text('Error rendering screenshot.');
+      }
+      doc.moveDown(2);
+    }
+
     // ── Footer ────────────────────────────────────────
     doc.fontSize(10).fillColor('#555').text('AI-Powered Cyber Threat Detection Platform — Confidential', { align: 'center' });
 

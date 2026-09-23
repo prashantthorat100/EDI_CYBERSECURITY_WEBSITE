@@ -7,7 +7,7 @@
     "dev:server": "npm run dev --prefix server",
     "dev:client": "npm run dev --prefix client",
     "dev:backend": "cd backend && uvicorn app.main:app --reload",
-    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\" --names \"server,client\" --prefix-colors \"cyan,magenta\""
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\" \"npm run dev:backend\" --names \"server,client,backend\" --prefix-colors \"cyan,magenta,yellow\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2"

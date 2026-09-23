@@ -66,6 +66,10 @@ const scanSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       default: null,
     },
+    screenshot: {
+      type: String, // Base64 image data
+      default: null,
+    },
   },
   { timestamps: true }
 );

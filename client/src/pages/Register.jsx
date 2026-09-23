@@ -21,6 +21,8 @@ export default function Register() {
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Invalid email';
     if (!form.password) e.password = 'Password is required';
     else if (form.password.length < 8) e.password = 'Must be at least 8 characters';
+    else if (!/[A-Z]/.test(form.password)) e.password = 'Must contain at least one uppercase letter';
+    else if (!/[0-9]/.test(form.password)) e.password = 'Must contain at least one number';
     if (form.password !== form.confirm) e.confirm = 'Passwords do not match';
     setErrors(e);
     return !Object.keys(e).length;
@@ -31,11 +33,15 @@ export default function Register() {
     if (!validate()) return;
     setLoading(true);
     try {
-      const user = await register(form.name, form.email, form.password);
+      const user = await register(form.name, form.email, form.password, form.confirm);
       toast.success(`Account created! Welcome, ${user.name}! 🎉`);
       navigate('/dashboard');
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Registration failed');
+      if (err.response?.data?.errors?.length) {
+        toast.error(err.response.data.errors[0].msg);
+      } else {
+        toast.error(err.response?.data?.error || 'Registration failed');
+      }
     } finally {
       setLoading(false);
     }

@@ -3,6 +3,7 @@ const fs = require('fs');
 const Scan = require('../models/Scan');
 const ThreatLog = require('../models/ThreatLog');
 const { analyzeUrl, analyzeDocument } = require('../services/aiService');
+const { takeScreenshot } = require('../services/screenshotService');
 const { buildScanResult } = require('../schemas/scanResult');
 
 // ── @desc    Analyze a URL ────────────────────────────────────────────────────
@@ -20,42 +21,52 @@ const analyzeUrlHandler = async (req, res) => {
     }
 
     const start = Date.now();
-    const aiResult = await analyzeUrl(url);
+    
+    // Run AI analysis and Screenshot in parallel
+    const [aiResult, screenshot] = await Promise.all([
+      analyzeUrl(url),
+      takeScreenshot(url).catch(e => {
+        console.error('Screenshot error:', e);
+        return null;
+      })
+    ]);
+    
     const duration = Date.now() - start;
 
     const scan = await Scan.create({
       user: req.user._id,
       type: 'url',
       target: url,
-      threatLevel: aiResult.threatLevel,
-      threatScore: aiResult.threatScore,
-      confidenceScore: aiResult.confidenceScore,
-      detectedFeatures: aiResult.detectedFeatures || [],
-      recommendation: aiResult.recommendation,
-      aiExplanation: aiResult.aiExplanation,
-      scanDuration: aiResult.scanDuration || duration,
+      threatLevel: aiResult.risk?.severity?.toLowerCase() || aiResult.threatLevel || 'safe',
+      threatScore: aiResult.risk?.risk_score ?? aiResult.threatScore ?? 0,
+      confidenceScore: (aiResult.risk?.confidence * 100) || aiResult.confidenceScore || 0,
+      detectedFeatures: aiResult.risk?.threats || aiResult.detectedFeatures || [],
+      recommendation: aiResult.recommendation || '',
+      aiExplanation: aiResult.explanation || aiResult.aiExplanation || '',
+      scanDuration: aiResult.scan_duration_ms || aiResult.scanDuration || duration,
       rawAiResponse: aiResult,
+      screenshot: screenshot, // Save screenshot in DB
       status: 'completed',
     });
 
     // Log threat if risk score > 50
-    if (aiResult.threatScore > 50) {
+    if (scan.threatScore > 50) {
       await ThreatLog.create({
         scan: scan._id,
         user: req.user._id,
         threatType: 'URL Threat',
         severity:
-          aiResult.threatScore > 80 ? 'critical'
-          : aiResult.threatScore > 60 ? 'high'
+          scan.threatScore > 80 ? 'critical'
+          : scan.threatScore > 60 ? 'high'
           : 'medium',
-        description: aiResult.aiExplanation || 'Suspicious URL detected.',
+        description: scan.aiExplanation || 'Suspicious URL detected.',
         ipAddress: req.ip,
         userAgent: req.headers['user-agent'],
       });
     }
 
     // Return standardised scan result
-    const result = buildScanResult(aiResult, url, 'url', scan._id.toString(), duration);
+    const result = buildScanResult(scan, url, 'url', scan._id.toString(), duration);
 
     return res.status(201).json({ scan, result });
   } catch (error) {
